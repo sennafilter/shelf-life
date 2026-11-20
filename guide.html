@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>How I Built Shelf Life</title>
+<meta name="description" content="A step-by-step guide to building a website with Claude, saving it on GitHub and putting it live on Vercel.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,700;1,9..144,800&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap">
+<style>
+/* Guide page. Same retro palette as the shelf: teal wall, navy ink, red accent, mustard. One column, numbered steps because the order matters. */
+:root{--bg:#d6e4e6;--wall:#c6d9dc;--ink:#14243d;--mut:#4a5e75;--line:rgba(20,36,61,.24);--acc:#d8432b;--mustard:#ebb94f;--card:#f4eddc;--code:#14243d;--codeink:#f3e6cf;
+ --d:'Fraunces',Georgia,serif;--t:'Newsreader',Georgia,serif;--m:'DM Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a1216;--wall:#34181d;--ink:#f3e6cf;--mut:#c4a58e;--line:rgba(243,230,207,.24);--acc:#f2a83b;--mustard:#c8892a;--card:#3a1b20;--code:#14080b;--codeink:#f3e6cf;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#2a1216;--wall:#34181d;--ink:#f3e6cf;--mut:#c4a58e;--line:rgba(243,230,207,.24);--acc:#f2a83b;--mustard:#c8892a;--card:#3a1b20;--code:#14080b;--codeink:#f3e6cf;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--t);font-size:18px;line-height:1.6;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 90px}
+.wrap{max-width:760px;margin:0 auto}
+.mono{font-family:var(--m);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+a{color:var(--acc)}
+.back{display:inline-block;margin-bottom:28px;color:var(--mut);text-decoration:none}
+h1{font-family:var(--d);font-style:italic;font-weight:800;font-size:clamp(44px,9vw,84px);line-height:.95;letter-spacing:-.03em;margin:0 0 18px;text-wrap:balance}
+.lede{font-size:21px;color:var(--mut);margin:0 0 26px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:44px}
+.btn{display:inline-block;font-family:var(--m);font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;padding:12px 20px;border-radius:99px;border:1px solid var(--ink);color:var(--ink)}
+.btn.main{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn:focus-visible,a:focus-visible,.copy:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.need{background:var(--card);padding:20px 24px;border-radius:4px;margin-bottom:48px}
+.need ul{margin:8px 0 0;padding-left:20px}
+.step{display:grid;grid-template-columns:56px minmax(0,1fr);gap:0 18px;padding:30px 0;border-top:2px solid var(--ink)}
+.step>b{font-family:var(--d);font-weight:800;font-size:46px;line-height:1;color:var(--acc);letter-spacing:-.03em}
+.step h2{font-family:var(--d);font-weight:800;font-size:clamp(26px,4vw,34px);line-height:1.05;letter-spacing:-.02em;margin:2px 0 10px}
+.step p{margin:0 0 12px}
+.step>div{min-width:0}
+.say{position:relative;background:var(--code);color:var(--codeink);border-radius:4px;padding:16px 64px 16px 18px;margin:12px 0;font-family:var(--m);font-size:13px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.say .copy{position:absolute;top:10px;right:10px;font-family:var(--m);font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:transparent;color:var(--codeink);border:1px solid rgba(243,230,207,.4);border-radius:99px;padding:4px 10px;cursor:pointer}
+.say .lbl{display:block;color:var(--mustard);font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+.note{border-left:3px solid var(--acc);padding-left:14px;color:var(--mut);margin:14px 0 0}
+.tip{background:var(--mustard);color:#14243d;padding:14px 18px;border-radius:3px;margin:14px 0 0;font-size:16px}
+.final{border-top:2px solid var(--ink);padding-top:30px}
+.final h2{font-family:var(--d);font-style:italic;font-weight:800;font-size:clamp(32px,5vw,48px);line-height:1;margin:0 0 12px;letter-spacing:-.02em}
+code{font-family:var(--m);font-size:.85em;background:var(--wall);padding:1px 6px;border-radius:3px}
+@media(max-width:560px){.step{grid-template-columns:1fr}.step>b{font-size:36px;margin-bottom:6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back mono" href="./">&larr; Back to the shelf</a>
+  <span class="mono" style="color:var(--acc);display:block;margin-bottom:10px">A guide</span>
+  <h1>Build a website with Claude, then put it online</h1>
+  <p class="lede">This is how I made Shelf Life, my library page, without writing any code myself. You describe what you want, react to what you see, save it on GitHub and publish it on Vercel. You can swap the books for anything: a recipe box, a travel log, a portfolio.</p>
+  <div class="cta">
+    <a class="btn main" href="https://github.com/sennafilter/shelf-life/generate">Make your own copy</a>
+    <a class="btn" href="https://github.com/sennafilter/shelf-life">See the code on GitHub</a>
+    <a class="btn" href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsennafilter%2Fshelf-life">Deploy it on Vercel</a>
+  </div>
+
+  <div class="need">
+    <span class="mono" style="color:var(--acc)">You need</span>
+    <ul>
+      <li>Claude (the Code tab in the Claude app)</li>
+      <li>A free GitHub account at github.com</li>
+      <li>A free Vercel account at vercel.com (sign up with GitHub)</li>
+    </ul>
+  </div>
+
+  <section class="step"><b>1</b><div>
+    <h2>Say what you want, with a reference</h2>
+    <p>Start with the feeling, not the features. I showed Claude a screenshot of a site I loved and said what I wanted to be different. Pictures help a lot.</p>
+    <div class="say"><button class="copy" type="button">Copy</button><span class="lbl">What I said</span>I want to create a website like Goodreads, but way cooler. Here is one I really like: books on a shelf, editorial, real-looking books. I can't copy it exactly, so make mine different.</div>
+    <p class="note">Say who it's for. Mine said: I like Colleen Hoover and the most popular books, nothing too girly, and I love nonfiction. Claude filled the shelf with books like that.</p>
+  </div></section>
+
+  <section class="step"><b>2</b><div>
+    <h2>React like a designer</h2>
+    <p>The first version won't be right. Look at it and say plainly what bugs you. Short, honest notes work best, and you don't need design words.</p>
+    <div class="say"><button class="copy" type="button">Copy</button><span class="lbl">Notes I sent, one at a time</span>This is too similar to hers. Maybe other colors, something more retro or editorial.
+Those lines are gross.
+These shelves look too much like hers.
+I want the books to look a little more realistic.
+I want to be able to see my reads, recommended, to read, and so on.</div>
+    <p>Each note changed something real: the colors, the shelves (they became a wooden bookcase) and the reading lists.</p>
+  </div></section>
+
+  <section class="step"><b>3</b><div>
+    <h2>Ask for options before it changes anything</h2>
+    <p>When I wasn't sure about a screen, I asked for mock-ups first. Claude made a separate page with several versions and left the real site alone. I picked one, then it built it in.</p>
+    <div class="say"><button class="copy" type="button">Copy</button><span class="lbl">What I said</span>Give me 5 options, static, before changing the website.</div>
+    <p class="tip">If Claude misread you, say so. I asked for book views and meant home screens, said that, and got four home screens.</p>
+  </div></section>
+
+  <section class="step"><b>4</b><div>
+    <h2>Put it on GitHub</h2>
+    <p>GitHub is where your project lives so you can keep it, share it and change it later. Ask Claude to do it.</p>
+    <div class="say"><button class="copy" type="button">Copy</button><span class="lbl">What I said</span>Can you put this on GitHub so I can do it on Vercel?</div>
+    <p>Claude created a repository called <code>shelf-life</code> with the site in a file named <code>index.html</code>. Claude needs to be logged in to GitHub on your computer to do this (the GitHub app or <code>gh auth login</code> in a terminal). If it asks whether the repo should be public or private, public is what lets other people copy it.</p>
+  </div></section>
+
+  <section class="step"><b>5</b><div>
+    <h2>Publish it on Vercel</h2>
+    <p>Vercel turns your GitHub repo into a real website address. It's free for personal projects.</p>
+    <ol style="margin:0 0 12px;padding-left:22px">
+      <li>Go to vercel.com/new and sign in with GitHub.</li>
+      <li>Pick your repo.</li>
+      <li>Set the Framework Preset to <b>Other</b> and leave the rest empty.</li>
+      <li>Click <b>Deploy</b>. A minute later you have a link.</li>
+    </ol>
+    <p>After that, whenever Claude pushes a change to GitHub, Vercel updates the site by itself.</p>
+  </div></section>
+
+  <section class="step"><b>6</b><div>
+    <h2>Make it yours</h2>
+    <p>Open the repo, click <b>Use this template</b>, then deploy your copy. Then open it in Claude and change it with plain sentences, like these:</p>
+    <div class="say"><button class="copy" type="button">Copy</button><span class="lbl">Try these</span>Replace the books with my own list. Here is a CSV of what I've read.
+Change the colors to something warmer.
+Add a page about me and link it in the footer.
+Make a recipe box instead of a library, same bookcase look.</div>
+    <p class="note">The shelf is one HTML file, so it's easy to change. Your ratings and reading lists are saved in your own browser.</p>
+  </div></section>
+
+  <div class="final">
+    <h2>Build the exact one</h2>
+    <p>Everything is in one public repo. Copy it, deploy it, then make it yours.</p>
+    <div class="cta" style="margin:0">
+      <a class="btn main" href="https://github.com/sennafilter/shelf-life/generate">Use this template</a>
+      <a class="btn" href="https://github.com/sennafilter/shelf-life">github.com/sennafilter/shelf-life</a>
+    </div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.say .copy').forEach(function(b){
+  b.addEventListener('click',function(){
+    var box=b.parentNode,clone=box.cloneNode(true);
+    clone.querySelectorAll('.copy,.lbl').forEach(function(n){n.remove()});
+    var text=clone.textContent.trim();
+    function done(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1400)}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){})}
+  });
+});
+</script>
+</body>
+</html>
